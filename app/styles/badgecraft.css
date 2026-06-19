@@ -1,0 +1,299 @@
+/* BadgeCraft Premium CSS Styling */
+
+:root {
+  --bc-primary: #008060; /* Shopify Green */
+  --bc-primary-hover: #006e52;
+  --bc-bg-card: #ffffff;
+  --bc-border: #e1e3e5;
+  --bc-text-dark: #202223;
+  --bc-text-light: #6d7175;
+  --bc-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05), 0px 1px 3px rgba(0, 0, 0, 0.03);
+  --bc-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base styling overrides if needed, but scoped to .badgecraft-container */
+.badgecraft-container {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--bc-text-dark);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Dashboard Grid Layout */
+.bc-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .bc-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+}
+
+/* Card Styling */
+.bc-card {
+  background: var(--bc-bg-card);
+  border: 1px solid var(--bc-border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--bc-shadow);
+  transition: var(--bc-transition);
+}
+
+.bc-card:hover {
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.bc-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--bc-text-dark);
+  border-bottom: 1px solid var(--bc-border);
+  padding-bottom: 12px;
+}
+
+/* Form Controls */
+.bc-form-group {
+  margin-bottom: 20px;
+}
+
+.bc-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--bc-text-dark);
+}
+
+.bc-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--bc-border);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: var(--bc-transition);
+}
+
+.bc-input:focus {
+  border-color: var(--bc-primary);
+  box-shadow: 0 0 0 3px rgba(0, 128, 96, 0.15);
+}
+
+/* Color Picker Container */
+.bc-color-picker-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.bc-color-input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--bc-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: #fafbfb;
+}
+
+.bc-color-preview-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+}
+
+.bc-color-preview-box::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.bc-color-preview-box::-webkit-color-swatch {
+  border: none;
+}
+
+/* Dynamic Live Preview */
+.bc-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f1f2f4;
+  border: 2px dashed var(--bc-border);
+  border-radius: 12px;
+  padding: 40px 20px;
+  margin-bottom: 24px;
+  min-height: 140px;
+  position: relative;
+}
+
+.bc-preview-label {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--bc-text-light);
+  font-weight: 600;
+}
+
+/* Badge Component (Rendered) */
+.bc-badge-render {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  transition: var(--bc-transition);
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+/* Product Selection Scroll Box */
+.bc-product-selector {
+  border: 1px solid var(--bc-border);
+  border-radius: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 8px;
+  background: #fbfcfc;
+}
+
+.bc-product-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--bc-transition);
+  user-select: none;
+}
+
+.bc-product-item:hover {
+  background: #f4f6f6;
+}
+
+.bc-product-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--bc-primary);
+  cursor: pointer;
+}
+
+.bc-product-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--bc-border);
+  background: #fff;
+}
+
+.bc-product-info {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bc-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Table / Active Badges List */
+.bc-table-container {
+  overflow-x: auto;
+}
+
+.bc-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.bc-table th {
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--bc-border);
+  color: var(--bc-text-light);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.bc-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--bc-border);
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.bc-badge-preview-cell {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bc-btn {
+  background: var(--bc-primary);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--bc-transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.bc-btn:hover {
+  background: var(--bc-primary-hover);
+}
+
+.bc-btn-danger {
+  background: #e14343;
+  color: white;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  width: auto;
+}
+
+.bc-btn-danger:hover {
+  background: #c53535;
+}
+
+.bc-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--bc-text-light);
+}
+
+.bc-tag {
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-right: 4px;
+  display: inline-block;
+}

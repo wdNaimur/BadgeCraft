@@ -1,360 +1,364 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useFetcher } from "react-router";
-import { useAppBridge } from "@shopify/app-bridge-react";
+import { useLoaderData, useSubmit, Form } from "react-router";
 import { authenticate } from "../shopify.server";
+import db from "../db.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
+// Define TypeScript interfaces for our loader data
+interface ShopifyProduct {
+  id: string;
+  title: string;
+  handle: string;
+  featuredImage?: {
+    url: string;
+  } | null;
+}
+
+interface DBBadgeProduct {
+  id: string;
+  badgeId: string;
+  productId: string;
+}
+
+interface DBBadge {
+  id: string;
+  shop: string;
+  text: string;
+  textColor: string;
+  backgroundColor: string;
+  createdAt: string;
+  updatedAt: string;
+  products: DBBadgeProduct[];
+}
+
+// 1. Loader: Fetches DB Badges and Shopify Products
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
+  const shop = session.shop;
+
+  // Fetch local badge configurations
+  const dbBadges = await db.badge.findMany({
+    where: { shop },
+    include: {
+      products: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  // Query Shopify's Admin GraphQL API for products
+  const response = await admin.graphql(
+    `#graphql
+    query getProducts {
+      products(first: 50) {
+        edges {
+          node {
+            id
+            title
+            handle
+            featuredImage {
+              url
+            }
+          }
+        }
+      }
+    }`
+  );
+  
+  const responseJson = await response.json();
+  const products: ShopifyProduct[] = 
+    responseJson.data?.products?.edges.map((edge: any) => edge.node) || [];
+
+  return {
+    badges: dbBadges as unknown as DBBadge[],
+    products,
+  };
+};
+
+// 2. Action: Handles creating and deleting badges in the DB
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const shop = session.shop;
+  const formData = await request.formData();
+  
+  const actionType = formData.get("actionType");
+
+  if (actionType === "create") {
+    const text = formData.get("text") as string;
+    const textColor = formData.get("textColor") as string || "#FFFFFF";
+    const backgroundColor = formData.get("backgroundColor") as string || "#000000";
+    const productIds = formData.getAll("productIds") as string[];
+
+    if (!text) {
+      return { error: "Badge text is required" };
+    }
+
+    // Save configuration in local SQLite database
+    await db.badge.create({
+      data: {
+        shop,
+        text,
+        textColor,
+        backgroundColor,
+        products: {
+          create: productIds.map((productId) => ({
+            productId,
+          })),
+        },
+      },
+    });
+
+    return { success: true, message: "Badge created successfully" };
+  }
+
+  if (actionType === "delete") {
+    const id = formData.get("badgeId") as string;
+
+    if (id) {
+      await db.badge.delete({
+        where: { id },
+      });
+      return { success: true, message: "Badge deleted successfully" };
+    }
+  }
 
   return null;
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
-  const color = ["Red", "Orange", "Yellow", "Green"][
-    Math.floor(Math.random() * 4)
-  ];
-  const response = await admin.graphql(
-    `#graphql
-      mutation populateProduct($product: ProductCreateInput!) {
-        productCreate(product: $product) {
-          product {
-            id
-            title
-            handle
-            status
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
-            }
-            demoInfo: metafield(namespace: "$app", key: "demo_info") {
-              jsonValue
-            }
-          }
-        }
-      }`,
-    {
-      variables: {
-        product: {
-          title: `${color} Snowboard`,
-          metafields: [
-            {
-              namespace: "$app",
-              key: "demo_info",
-              value: "Created by React Router Template",
-            },
-          ],
-        },
-      },
-    },
-  );
-  const responseJson = await response.json();
-
-  const product = responseJson.data!.productCreate!.product!;
-  const variantId = product.variants.edges[0]!.node!.id!;
-
-  const variantResponse = await admin.graphql(
-    `#graphql
-    mutation shopifyReactRouterTemplateUpdateVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
-      productVariantsBulkUpdate(productId: $productId, variants: $variants) {
-        productVariants {
-          id
-          price
-          barcode
-          createdAt
-        }
-      }
-    }`,
-    {
-      variables: {
-        productId: product.id,
-        variants: [{ id: variantId, price: "100.00" }],
-      },
-    },
-  );
-
-  const variantResponseJson = await variantResponse.json();
-
-  const metaobjectResponse = await admin.graphql(
-    `#graphql
-    mutation shopifyReactRouterTemplateUpsertMetaobject($handle: MetaobjectHandleInput!, $metaobject: MetaobjectUpsertInput!) {
-      metaobjectUpsert(handle: $handle, metaobject: $metaobject) {
-        metaobject {
-          id
-          handle
-          title: field(key: "title") {
-            jsonValue
-          }
-          description: field(key: "description") {
-            jsonValue
-          }
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }`,
-    {
-      variables: {
-        handle: {
-          type: "$app:example",
-          handle: "demo-entry",
-        },
-        metaobject: {
-          fields: [
-            { key: "title", value: "Demo Entry" },
-            {
-              key: "description",
-              value:
-                "This metaobject was created by the Shopify app template to demonstrate the metaobject API.",
-            },
-          ],
-        },
-      },
-    },
-  );
-
-  const metaobjectResponseJson = await metaobjectResponse.json();
-
-  return {
-    product: responseJson!.data!.productCreate!.product,
-    variant:
-      variantResponseJson!.data!.productVariantsBulkUpdate!.productVariants,
-    metaobject:
-      metaobjectResponseJson!.data!.metaobjectUpsert!.metaobject,
-  };
-};
-
+// 3. React Dashboard Component
 export default function Index() {
-  const fetcher = useFetcher<typeof action>();
+  const { badges, products } = useLoaderData<typeof loader>();
+  const submit = useSubmit();
 
-  const shopify = useAppBridge();
-  const isLoading =
-    ["loading", "submitting"].includes(fetcher.state) &&
-    fetcher.formMethod === "POST";
+  // Local Form state for interactive Live Preview
+  const [badgeText, setBadgeText] = useState("NEW ITEM");
+  const [textColor, setTextColor] = useState("#FFFFFF");
+  const [bgColor, setBgColor] = useState("#008060");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    if (fetcher.data?.product?.id) {
-      shopify.toast.show("Product created");
-    }
-  }, [fetcher.data?.product?.id, shopify]);
+  // Filter products by search text
+  const filteredProducts = products.filter((product) =>
+    product.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const generateProduct = () => fetcher.submit({}, { method: "POST" });
+  // Helper to map product titles for badges
+  const getProductTitle = (productId: string) => {
+    const prod = products.find((p) => p.id === productId);
+    return prod ? prod.title : "Unknown Product";
+  };
 
   return (
-    <s-page heading="Shopify app template">
-      <s-button slot="primary-action" onClick={generateProduct}>
-        Generate a product
-      </s-button>
+    <div className="badgecraft-container">
+      <s-page heading="BadgeCraft Dashboard">
+        
+        {/* Main Grid: Left Panel (Builder & Selector), Right Panel (Preview) */}
+        <div className="bc-grid" style={{ marginBottom: "32px" }}>
+          
+          {/* Builder Form Card */}
+          <div className="bc-card">
+            <h2 className="bc-card-title">Create Dynamic Badge</h2>
+            
+            <Form method="post">
+              <input type="hidden" name="actionType" value="create" />
+              
+              <div className="bc-form-group">
+                <label className="bc-label">Badge Label Text</label>
+                <input
+                  type="text"
+                  name="text"
+                  className="bc-input"
+                  placeholder="e.g. 50% OFF, BOGO"
+                  value={badgeText}
+                  onChange={(e) => setBadgeText(e.target.value)}
+                  required
+                />
+              </div>
 
-      <s-section heading="Congrats on creating a new Shopify app 🎉">
-        <s-paragraph>
-          This embedded app template uses{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/tools/app-bridge"
-            target="_blank"
-          >
-            App Bridge
-          </s-link>{" "}
-          interface examples like an{" "}
-          <s-link href="/app/additional">additional page in the app nav</s-link>
-          , as well as an{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            Admin GraphQL
-          </s-link>{" "}
-          mutation demo, to provide a starting point for app development.
-        </s-paragraph>
-      </s-section>
-      <s-section heading="Get started with products">
-        <s-paragraph>
-          Generate a product with GraphQL and get the JSON output for that
-          product. Learn more about the{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql/latest/mutations/productCreate"
-            target="_blank"
-          >
-            productCreate
-          </s-link>{" "}
-          mutation in our API references. Includes a product{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data/metafields"
-            target="_blank"
-          >
-            metafield
-          </s-link>{" "}
-          and{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data/metaobjects"
-            target="_blank"
-          >
-            metaobject
-          </s-link>
-          .
-        </s-paragraph>
-        <s-stack direction="inline" gap="base">
-          <s-button
-            onClick={generateProduct}
-            {...(isLoading ? { loading: true } : {})}
-          >
-            Generate a product
-          </s-button>
-          {fetcher.data?.product && (
-            <s-button
-              onClick={() => {
-                shopify.intents.invoke?.("edit:shopify/Product", {
-                  value: fetcher.data?.product?.id,
-                });
-              }}
-              target="_blank"
-              variant="tertiary"
-            >
-              Edit product
-            </s-button>
-          )}
-        </s-stack>
-        {fetcher.data?.product && (
-          <s-section heading="productCreate mutation">
-            <s-stack direction="block" gap="base">
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre
+              <div className="bc-color-picker-row">
+                <div className="bc-form-group" style={{ flex: 1 }}>
+                  <label className="bc-label">Text Color</label>
+                  <div className="bc-color-input-wrapper">
+                    <input
+                      type="color"
+                      name="textColor"
+                      className="bc-color-preview-box"
+                      value={textColor}
+                      onChange={(e) => setTextColor(e.target.value)}
+                    />
+                    <span style={{ fontSize: "13px" }}>{textColor}</span>
+                  </div>
+                </div>
+
+                <div className="bc-form-group" style={{ flex: 1 }}>
+                  <label className="bc-label">Background Color</label>
+                  <div className="bc-color-input-wrapper">
+                    <input
+                      type="color"
+                      name="backgroundColor"
+                      className="bc-color-preview-box"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                    />
+                    <span style={{ fontSize: "13px" }}>{bgColor}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Selector */}
+              <div className="bc-form-group">
+                <label className="bc-label">Apply to Products</label>
+                <input
+                  type="text"
+                  className="bc-input"
+                  style={{ marginBottom: "10px" }}
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                
+                <div className="bc-product-selector">
+                  {filteredProducts.length === 0 ? (
+                    <div style={{ padding: "10px", color: "#6d7175", fontSize: "13px" }}>
+                      No products found.
+                    </div>
+                  ) : (
+                    filteredProducts.map((product) => (
+                      <label key={product.id} className="bc-product-item">
+                        <input
+                          type="checkbox"
+                          name="productIds"
+                          value={product.id}
+                        />
+                        {product.featuredImage?.url ? (
+                          <img
+                            src={product.featuredImage.url}
+                            alt={product.title}
+                            className="bc-product-thumb"
+                          />
+                        ) : (
+                          <div
+                            className="bc-product-thumb"
+                            style={{ background: "#e2e8f0", display: "inline-block" }}
+                          />
+                        )}
+                        <span className="bc-product-info">{product.title}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <button type="submit" className="bc-btn" style={{ marginTop: "10px" }}>
+                Save Badge Configuration
+              </button>
+            </Form>
+          </div>
+
+          {/* Real-time Dynamic Preview Card */}
+          <div className="bc-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div>
+              <h2 className="bc-card-title">Live Preview</h2>
+              <div className="bc-preview-container">
+                <span className="bc-preview-label">Storefront Widget</span>
+                
+                {/* Dynamically styled badge based on local states */}
+                <div
+                  className="bc-badge-render"
                   style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
+                    backgroundColor: bgColor,
+                    color: textColor,
                   }}
                 >
-                  <code>{JSON.stringify(fetcher.data.product, null, 2)}</code>
-                </pre>
-              </s-box>
+                  {badgeText || "PREVIEW"}
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ background: "#f9fafb", padding: "16px", borderRadius: "8px", border: "1px solid var(--bc-border)" }}>
+              <p style={{ fontSize: "12px", margin: 0, color: "#6d7175", lineHeight: "1.4" }}>
+                <strong>Tip:</strong> The live preview demonstrates how the badge block will style and display itself on your shop storefront.
+              </p>
+            </div>
+          </div>
 
-              <s-heading>productVariantsBulkUpdate mutation</s-heading>
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  <code>{JSON.stringify(fetcher.data.variant, null, 2)}</code>
-                </pre>
-              </s-box>
+        </div>
 
-              <s-heading>metaobjectUpsert mutation</s-heading>
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  <code>
-                    {JSON.stringify(fetcher.data.metaobject, null, 2)}
-                  </code>
-                </pre>
-              </s-box>
-            </s-stack>
-          </s-section>
-        )}
-      </s-section>
+        {/* Bottom Section: Active Badges List */}
+        <s-section heading="Active Configurations">
+          <div className="bc-card">
+            {badges.length === 0 ? (
+              <div className="bc-empty-state">
+                <h3>No Badges Created</h3>
+                <p>Use the form above to build and apply your first storefront badge.</p>
+              </div>
+            ) : (
+              <div className="bc-table-container">
+                <table className="bc-table">
+                  <thead>
+                    <tr>
+                      <th>Badge Preview</th>
+                      <th>Configuration</th>
+                      <th>Applied Products</th>
+                      <th style={{ textAlign: "right" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {badges.map((badge) => (
+                      <tr key={badge.id}>
+                        <td>
+                          <div
+                            className="bc-badge-preview-cell"
+                            style={{
+                              backgroundColor: badge.backgroundColor,
+                              color: badge.textColor,
+                            }}
+                          >
+                            {badge.text}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: "12px" }}>
+                            <strong>Text Color:</strong> {badge.textColor} <br />
+                            <strong>Bg Color:</strong> {badge.backgroundColor}
+                          </div>
+                        </td>
+                        <td>
+                          {badge.products.length === 0 ? (
+                            <span style={{ color: "#e14343", fontSize: "12px" }}>Not applied to any products</span>
+                          ) : (
+                            badge.products.map((bp) => (
+                              <span key={bp.id} className="bc-tag">
+                                {getProductTitle(bp.productId)}
+                              </span>
+                            ))
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <Form method="post" style={{ display: "inline" }}>
+                            <input type="hidden" name="actionType" value="delete" />
+                            <input type="hidden" name="badgeId" value={badge.id} />
+                            <button type="submit" className="bc-btn bc-btn-danger">
+                              Delete
+                            </button>
+                          </Form>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </s-section>
 
-      <s-section slot="aside" heading="App template specs">
-        <s-paragraph>
-          <s-text>Framework: </s-text>
-          <s-link href="https://reactrouter.com/" target="_blank">
-            React Router
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Interface: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/app-home/using-polaris-components"
-            target="_blank"
-          >
-            Polaris web components
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>API: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            GraphQL
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Custom data: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data"
-            target="_blank"
-          >
-            Metafields &amp; metaobjects
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Database: </s-text>
-          <s-link href="https://www.prisma.io/" target="_blank">
-            Prisma
-          </s-link>
-        </s-paragraph>
-      </s-section>
-
-      <s-section slot="aside" heading="Next steps">
-        <s-unordered-list>
-          <s-list-item>
-            Build an{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/getting-started/build-app-example"
-              target="_blank"
-            >
-              example app
-            </s-link>
-          </s-list-item>
-          <s-list-item>
-            Explore Shopify&apos;s API with{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/tools/graphiql-admin-api"
-              target="_blank"
-            >
-              GraphiQL
-            </s-link>
-          </s-list-item>
-        </s-unordered-list>
-      </s-section>
-    </s-page>
+      </s-page>
+    </div>
   );
 }
 
