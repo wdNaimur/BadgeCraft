@@ -224,6 +224,10 @@ export default function Index() {
   const [bgColor, setBgColor] = useState("#008060");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Store which badge is targeted for deletion
+  const [badgeToDelete, setBadgeToDelete] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Filter products by search text
   const filteredProducts = products.filter((product) =>
     product.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -422,13 +426,16 @@ export default function Index() {
                           )}
                         </td>
                         <td style={{ textAlign: "right" }}>
-                          <Form method="post" style={{ display: "inline" }}>
-                            <input type="hidden" name="actionType" value="delete" />
-                            <input type="hidden" name="badgeId" value={badge.id} />
-                            <button type="submit" className="bc-btn bc-btn-danger">
-                              Delete
-                            </button>
-                          </Form>
+                          <button
+                            type="button"
+                            className="bc-btn bc-btn-danger"
+                            onClick={() => {
+                              setBadgeToDelete(badge.id);
+                              setIsModalOpen(true);
+                            }}
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -440,6 +447,48 @@ export default function Index() {
         </s-section>
 
       </s-page>
+
+      {/* Custom Delete Confirmation Modal */}
+      {isModalOpen && (
+        <div className="bc-modal-backdrop">
+          <div className="bc-modal">
+            <h3 className="bc-modal-title">
+              <span style={{ marginRight: '6px' }}>⚠️</span> Delete Configuration
+            </h3>
+            <p className="bc-modal-body">
+              Are you sure you want to delete this badge configuration? This will permanently remove the badge from all assigned storefront products.
+            </p>
+            <div className="bc-modal-actions">
+              <button
+                type="button"
+                className="bc-btn-secondary"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setBadgeToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="bc-btn-danger-modal"
+                onClick={() => {
+                  if (badgeToDelete) {
+                    const formData = new FormData();
+                    formData.append("actionType", "delete");
+                    formData.append("badgeId", badgeToDelete);
+                    submit(formData, { method: "post" });
+                  }
+                  setIsModalOpen(false);
+                  setBadgeToDelete(null);
+                }}
+              >
+                Delete Configuration
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

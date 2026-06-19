@@ -17,6 +17,8 @@ declare global {
       's-app-nav': any;
       's-text': any;
       's-link-item': any;
+      'ui-modal': any;
+      'ui-title-bar': any;
     }
   }
 }
