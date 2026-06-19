@@ -166,51 +166,41 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
 
       if (badge) {
-        // Clear metafields for each product
-        for (const bp of badge.products) {
-          // Query the metafield ID to delete it
-          const queryMetafieldRes = await admin.graphql(
+        // Clear metafields for all assigned products in a single batch mutation using modern metafieldsDelete API
+        if (badge.products.length > 0) {
+          const metafields = badge.products.map((bp) => ({
+            ownerId: bp.productId,
+            namespace: "$app",
+            key: "badge_config",
+          }));
+
+          const response = await admin.graphql(
             `#graphql
-            query getMetafield($ownerId: ID!) {
-              product(id: $ownerId) {
-                metafield(namespace: "$app", key: "badge_config") {
-                  id
+            mutation deleteMetafields($metafields: [MetafieldIdentifierInput!]!) {
+              metafieldsDelete(metafields: $metafields) {
+                deletedMetafields {
+                  key
+                  namespace
+                  ownerId
+                }
+                userErrors {
+                  field
+                  message
                 }
               }
             }`,
             {
               variables: {
-                ownerId: bp.productId,
+                metafields,
               },
             }
           );
-          const mqJson = await queryMetafieldRes.json();
-          const metafieldId = mqJson.data?.product?.metafield?.id;
-
-          if (metafieldId) {
-            await admin.graphql(
-              `#graphql
-              mutation deleteMetafield($input: MetafieldDeleteInput!) {
-                metafieldDelete(input: $input) {
-                  deletedId
-                  userErrors {
-                    field
-                    message
-                  }
-                }
-              }`,
-              {
-                variables: {
-                  input: {
-                    id: metafieldId,
-                  },
-                },
-              }
-            );
-          }
+          
+          const responseJson = await response.json();
+          console.log("Delete metafields result:", JSON.stringify(responseJson));
         }
 
-        // Delete from local Prisma database
+        // Delete from local Prisma database (cascades and clears bindings)
         await db.badge.delete({
           where: { id },
         });
