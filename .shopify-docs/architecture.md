@@ -126,8 +126,8 @@ Before the dashboard renders, the loader:
 4. Feeds this data to the React frontend.
 
 ### B. The Action (Server-side)
-* **`actionType === "create"`**: Reads form fields, creates the database record for the new badge, and maps the selected product associations in the join table.
-* **`actionType === "delete"`**: Deletes the badge by ID, cascades to clear all related mappings.
+* **`actionType === "create"`**: Reads form fields, creates the database record for the new badge, maps the selected product associations in the join table, and syncs them to Shopify Product Metafields in a single batch mutation using `metafieldsSet`.
+* **`actionType === "delete"`**: Deletes the badge by ID, deletes the storefront metafield configurations in a single batch mutation using Shopify's modern `metafieldsDelete` API, and cascades to clear local database mappings.
 
 ---
 
