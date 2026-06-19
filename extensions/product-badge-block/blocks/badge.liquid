@@ -1,0 +1,29 @@
+{% if product.metafields.app.badge_config.value %}
+  {% assign badge = product.metafields.app.badge_config.value %}
+  {% if badge.text != blank %}
+    <div class="badgecraft-storefront-badge" style="
+      background-color: {{ badge.backgroundColor | default: '#000000' }};
+      color: {{ badge.textColor | default: '#ffffff' }};
+      padding: 6px 12px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 12px;
+      display: inline-block;
+      margin: 8px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      font-family: inherit;
+    ">
+      {{ badge.text }}
+    </div>
+  {% endif %}
+{% endif %}
+
+{% schema %}
+{
+  "name": "Product Badge Block",
+  "target": "section",
+  "settings": [
+    { "type": "product", "id": "product", "label": "Product", "autofill": true }
+  ]
+}
+{% endschema %}

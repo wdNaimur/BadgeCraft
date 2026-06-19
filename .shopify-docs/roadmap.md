@@ -42,17 +42,10 @@ This document provides a checklist of tasks to implement the **BadgeCraft** proj
 ---
 
 ## Phase 5: Creating the Theme App Extension (Storefront Rendering)
-* [ ] Run the CLI command: `npm run generate extension`
-* [ ] Select **Theme App Extension** and name it `product-badge-block`.
-* [ ] Inside the generated `extensions/product-badge-block/blocks/badge.liquid`:
-  * Write the Liquid HTML to render the badge:
-    ```liquid
-    {% if product.metafields.app.badge.value %}
-      <div style="background-color: {{ product.metafields.app.badge.value.bg_color }}; color: {{ product.metafields.app.badge.value.text_color }}; padding: 4px 8px; border-radius: 4px; display: inline-block;">
-        {{ product.metafields.app.badge.value.text }}
-      </div>
-    {% endif %}
-    ```
+* [x] Run the CLI command: `npm run generate extension`
+* [x] Select **Theme App Extension** and name it `product-badge-block`.
+* [x] Inside the generated `extensions/product-badge-block/blocks/badge.liquid`:
+  * Write the Liquid HTML to render the badge using `product.metafields.app.badge_config.value`.
 * [ ] Deploy the extension using `npm run deploy`.
 * [ ] Enable the App Block in the development store's Theme Editor.
 
