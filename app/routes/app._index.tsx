@@ -81,9 +81,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
-// 2. Action: Handles creating and deleting badges in the DB
+// 2. Action: Handles creating and deleting badges in the DB & syncing to Shopify Metafields
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   
@@ -99,7 +99,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { error: "Badge text is required" };
     }
 
-    // Save configuration in local SQLite database
+    // A. Save configuration in local SQLite database
     await db.badge.create({
       data: {
         shop,
@@ -114,17 +114,109 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     });
 
-    return { success: true, message: "Badge created successfully" };
+    // B. Sync configuration to Shopify Product Metafields in a single batch mutation
+    if (productIds.length > 0) {
+      const metafields = productIds.map((productId) => ({
+        ownerId: productId,
+        namespace: "$app",
+        key: "badge_config",
+        type: "json",
+        value: JSON.stringify({
+          text,
+          textColor,
+          backgroundColor,
+        }),
+      }));
+
+      const response = await admin.graphql(
+        `#graphql
+        mutation setMetafields($metafields: [MetafieldsSetInput!]!) {
+          metafieldsSet(metafields: $metafields) {
+            metafields {
+              id
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }`,
+        {
+          variables: {
+            metafields,
+          },
+        }
+      );
+      
+      const responseJson = await response.json();
+      console.log("Sync metafields result:", JSON.stringify(responseJson));
+    }
+
+    return { success: true, message: "Badge created and synced successfully" };
   }
 
   if (actionType === "delete") {
     const id = formData.get("badgeId") as string;
 
     if (id) {
-      await db.badge.delete({
+      // Fetch badge products to clear Shopify metafields first
+      const badge = await db.badge.findUnique({
         where: { id },
+        include: { products: true },
       });
-      return { success: true, message: "Badge deleted successfully" };
+
+      if (badge) {
+        // Clear metafields for each product
+        for (const bp of badge.products) {
+          // Query the metafield ID to delete it
+          const queryMetafieldRes = await admin.graphql(
+            `#graphql
+            query getMetafield($ownerId: ID!) {
+              product(id: $ownerId) {
+                metafield(namespace: "$app", key: "badge_config") {
+                  id
+                }
+              }
+            }`,
+            {
+              variables: {
+                ownerId: bp.productId,
+              },
+            }
+          );
+          const mqJson = await queryMetafieldRes.json();
+          const metafieldId = mqJson.data?.product?.metafield?.id;
+
+          if (metafieldId) {
+            await admin.graphql(
+              `#graphql
+              mutation deleteMetafield($input: MetafieldDeleteInput!) {
+                metafieldDelete(input: $input) {
+                  deletedId
+                  userErrors {
+                    field
+                    message
+                  }
+                }
+              }`,
+              {
+                variables: {
+                  input: {
+                    id: metafieldId,
+                  },
+                },
+              }
+            );
+          }
+        }
+
+        // Delete from local Prisma database
+        await db.badge.delete({
+          where: { id },
+        });
+      }
+
+      return { success: true, message: "Badge deleted and synced successfully" };
     }
   }
 

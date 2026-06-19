@@ -29,10 +29,15 @@ This document provides a checklist of tasks to implement the **BadgeCraft** proj
 ---
 
 ## Phase 4: Syncing Badges to Metafields (Server Action)
-* [ ] Write a server Action handler in `app/routes/app._index.tsx` (or a dedicated route like `app.badge.new.tsx`).
-* [ ] When the merchant saves:
+* [x] Declare metafield configuration under `product.metafields.app.badge_config` in `shopify.app.toml`.
+* [x] Write server Action handler in `app/routes/app._index.tsx` to handle syncing.
+* [x] When the merchant saves:
   1. Write the badge configuration to Prisma SQLite database.
   2. Call the Shopify Admin GraphQL API to write the badge JSON configuration to the product's metafield (`metafieldsSet` mutation).
+* [x] When the merchant deletes:
+  1. Query Shopify metafield IDs for assigned products.
+  2. Call `metafieldDelete` to clear metafields from products.
+  3. Delete from Prisma.
 
 ---
 
