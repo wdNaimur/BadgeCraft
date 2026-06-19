@@ -32,3 +32,25 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model Badge {
+  id              String         @id @default(uuid())
+  shop            String         // Identifies which Shopify store owns this badge configuration
+  text            String         // Display text (e.g. "20% OFF")
+  textColor       String         @default("#FFFFFF") // Hex value for font color
+  backgroundColor String         @default("#000000") // Hex value for background
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  products        BadgeProduct[] // One-to-many relationship with mapped products
+}
+
+model BadgeProduct {
+  id        String   @id @default(uuid())
+  badgeId   String
+  productId String   // Shopify GraphQL Product ID (e.g. "gid://shopify/Product/123456789")
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([badgeId, productId]) // A single product cannot have the same badge applied twice
+}
+

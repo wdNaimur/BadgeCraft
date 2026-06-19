@@ -31,3 +31,6 @@ database.sqlite
 
 # Gemini workspace configuration and logs
 .gemini/
+
+# Documentation for local learning (ignored from git)
+/.shopify-docs/
