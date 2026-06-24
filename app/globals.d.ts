@@ -1,6 +1,8 @@
 declare module "*.css";
 
-declare global {
+import * as React from 'react';
+
+declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
       's-page': any;
@@ -14,11 +16,14 @@ declare global {
       's-list-item': any;
       's-link': any;
       's-text-field': any;
+      's-search-field': any;
       's-app-nav': any;
       's-text': any;
       's-link-item': any;
       'ui-modal': any;
       'ui-title-bar': any;
+      's-grid': any;
+      's-grid-item': any;
     }
   }
 }
