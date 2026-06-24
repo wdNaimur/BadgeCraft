@@ -11,9 +11,9 @@ import {
   LivePreview,
   ActiveBadgesList,
   DeleteConfirmModal,
-} from "../components/BadgeCraftComponents";
-import { fetchDashboardData, handleDashboardAction } from "../services/badgecraft.server";
-import { useBadgeCraft } from "../hooks/useBadgeCraft";
+} from "../features/badge-craft/components";
+import { fetchDashboardData, handleDashboardAction } from "../features/badge-craft/services/badgecraft.server";
+import { useBadgeCraft } from "../features/badge-craft/hooks/useBadgeCraft";
 
 // 1. Loader: Fetches DB Badges and Shopify Products
 export const loader = async ({ request }: LoaderFunctionArgs) => {

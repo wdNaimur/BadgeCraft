@@ -1,5 +1,5 @@
-import db from "../db.server";
-import { authenticate } from "../shopify.server";
+import db from "../../../db.server";
+import { authenticate } from "../../../shopify.server";
 import type { ShopifyProduct, DBBadge } from "../types";
 
 // 1. Fetches DB Badges and Shopify Products
