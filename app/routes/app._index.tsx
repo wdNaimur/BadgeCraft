@@ -3,16 +3,16 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import {
-  BadgeBuilder,
-  ProductSelector,
-  LivePreview,
   ActiveBadgesList,
   DeleteConfirmModal,
 } from "../features/badge-craft/components";
-import { fetchDashboardData, handleDashboardAction } from "../features/badge-craft/services/badgecraft.server";
+import {
+  fetchDashboardData,
+  handleDashboardAction,
+} from "../features/badge-craft/services/badgecraft.server";
 import { useBadgeCraft } from "../features/badge-craft/hooks/useBadgeCraft";
 
 // 1. Loader: Fetches DB Badges and Shopify Products
@@ -20,7 +20,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return await fetchDashboardData(request);
 };
 
-// 2. Action: Handles creating, editing, and deleting badges in the DB & syncing to Shopify Metafields
+// 2. Action: Handles deleting badges in the DB & syncing to Shopify Metafields
 export const action = async ({ request }: ActionFunctionArgs) => {
   return await handleDashboardAction(request);
 };
@@ -28,74 +28,46 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 // 3. React Dashboard Component & Layout
 export default function Index() {
   const { badges, products } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
 
   const {
-    badgeText,
-    setBadgeText,
-    textColor,
-    setTextColor,
-    bgColor,
-    setBgColor,
-    searchQuery,
-    setSearchQuery,
-    editingBadgeId,
-    selectedProductIds,
-    setSelectedProductIds,
     badgeToDelete,
     setBadgeToDelete,
     isModalOpen,
     setIsModalOpen,
-    handleCancelEdit,
-    handleEditClick,
-    filteredProducts,
     submit,
   } = useBadgeCraft(products);
 
   return (
-    <s-box padding="space-500">
-      <s-page heading="BadgeCraft Dashboard">
-        
-        {/* Main Grid: Left Panel (Builder & Selector), Right Panel (Preview) */}
-        <s-grid gridTemplateColumns="@media (min-width: 768px) 1.2fr 0.8fr, 1fr" gap="space-500" style={{ marginBottom: "32px" } as any}>
-          <BadgeBuilder
-            badgeText={badgeText}
-            setBadgeText={setBadgeText}
-            textColor={textColor}
-            setTextColor={setTextColor}
-            bgColor={bgColor}
-            setBgColor={setBgColor}
-            editingBadgeId={editingBadgeId}
-            onCancelEdit={handleCancelEdit}
+    <s-box padding="large-200">
+      <s-page heading="BadgeCraft Dashboard" inlineSize="large">
+        {/* Dashboard Actions Header */}
+        <s-box
+          paddingBlockEnd="large-100"
+          style={{ display: "flex", justifyContent: "flex-end" } as any}
+        >
+          <s-button
+            variant="primary"
+            onClick={() => navigate("/app/create-badge")}
           >
-            <ProductSelector
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              filteredProducts={filteredProducts}
-              selectedProductIds={selectedProductIds}
-              setSelectedProductIds={setSelectedProductIds}
-            />
-          </BadgeBuilder>
-
-          <LivePreview
-            badgeText={badgeText}
-            textColor={textColor}
-            bgColor={bgColor}
-          />
-        </s-grid>
+            Create Badge
+          </s-button>
+        </s-box>
 
         {/* Bottom Section: Active Badges List */}
         <s-section heading="Active Configurations">
           <ActiveBadgesList
             badges={badges}
             products={products}
-            onEditClick={handleEditClick}
+            onEditClick={(badge) =>
+              navigate(`/app/create-badge?id=${badge.id}`)
+            }
             onDeleteClick={(badgeId) => {
               setBadgeToDelete(badgeId);
               setIsModalOpen(true);
             }}
           />
         </s-section>
-
       </s-page>
 
       {/* Custom Delete Confirmation Modal */}

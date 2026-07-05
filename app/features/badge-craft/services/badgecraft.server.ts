@@ -52,13 +52,14 @@ interface CreateBadgeInput {
   text: string;
   textColor: string;
   backgroundColor: string;
+  fontSize: string;
   productIds: string[];
 }
 
 export async function createBadge(request: Request, input: CreateBadgeInput) {
   const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
-  const { text, textColor, backgroundColor, productIds } = input;
+  const { text, textColor, backgroundColor, fontSize, productIds } = input;
 
   if (!text) {
     return { error: "Badge text is required" };
@@ -71,6 +72,7 @@ export async function createBadge(request: Request, input: CreateBadgeInput) {
       text,
       textColor,
       backgroundColor,
+      fontSize,
       products: {
         create: productIds.map((productId) => ({
           productId,
@@ -90,6 +92,7 @@ export async function createBadge(request: Request, input: CreateBadgeInput) {
         text,
         textColor,
         backgroundColor,
+        fontSize,
       }),
     }));
 
@@ -184,13 +187,14 @@ interface UpdateBadgeInput {
   text: string;
   textColor: string;
   backgroundColor: string;
+  fontSize: string;
   productIds: string[];
 }
 
 export async function updateBadge(request: Request, input: UpdateBadgeInput) {
   const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
-  const { badgeId, text, textColor, backgroundColor, productIds } = input;
+  const { badgeId, text, textColor, backgroundColor, fontSize, productIds } = input;
 
   if (!badgeId) {
     return { error: "Badge ID is required for editing" };
@@ -219,7 +223,7 @@ export async function updateBadge(request: Request, input: UpdateBadgeInput) {
   await db.$transaction([
     db.badge.update({
       where: { id: badgeId },
-      data: { text, textColor, backgroundColor },
+      data: { text, textColor, backgroundColor, fontSize },
     }),
     db.badgeProduct.deleteMany({
       where: {
@@ -281,6 +285,7 @@ export async function updateBadge(request: Request, input: UpdateBadgeInput) {
         text,
         textColor,
         backgroundColor,
+        fontSize,
       }),
     }));
 
@@ -320,9 +325,10 @@ export async function handleDashboardAction(request: Request) {
     const text = formData.get("text") as string;
     const textColor = formData.get("textColor") as string || "#FFFFFF";
     const backgroundColor = formData.get("backgroundColor") as string || "#000000";
+    const fontSize = formData.get("fontSize") as string || "medium";
     const productIds = formData.getAll("productIds") as string[];
 
-    return await createBadge(request, { text, textColor, backgroundColor, productIds });
+    return await createBadge(request, { text, textColor, backgroundColor, fontSize, productIds });
   }
 
   if (actionType === "edit") {
@@ -330,9 +336,10 @@ export async function handleDashboardAction(request: Request) {
     const text = formData.get("text") as string;
     const textColor = formData.get("textColor") as string || "#FFFFFF";
     const backgroundColor = formData.get("backgroundColor") as string || "#000000";
+    const fontSize = formData.get("fontSize") as string || "medium";
     const productIds = formData.getAll("productIds") as string[];
 
-    return await updateBadge(request, { badgeId, text, textColor, backgroundColor, productIds });
+    return await updateBadge(request, { badgeId, text, textColor, backgroundColor, fontSize, productIds });
   }
 
   if (actionType === "delete") {

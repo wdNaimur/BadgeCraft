@@ -20,6 +20,7 @@ export interface DBBadge {
   text: string;
   textColor: string;
   backgroundColor: string;
+  fontSize: string;
   createdAt: string;
   updatedAt: string;
   products: DBBadgeProduct[];

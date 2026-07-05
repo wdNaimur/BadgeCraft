@@ -19,73 +19,88 @@ export function ActiveBadgesList({
     return prod ? prod.title : "Unknown Product";
   };
   return (
-    <s-box background="base" borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="large" padding="space-500">
+    <s-box
+      background="base"
+      borderStyle="solid"
+      borderWidth="small-100"
+      borderColor="subdued"
+      borderRadius="large"
+      padding="large"
+    >
       {badges.length === 0 ? (
-        <s-box style={{ textAlign: "center", padding: "40px" } as any}>
+        <>
           <s-heading level="3">No Badges Created</s-heading>
-          <s-paragraph>Use the form above to build and apply your first storefront badge.</s-paragraph>
-        </s-box>
+          <s-paragraph>
+            Use the form above to build and apply your first storefront badge.
+          </s-paragraph>
+        </>
       ) : (
-        <s-box style={{ overflowX: "auto" } as any}>
-          <table className="bc-table">
-            <thead>
-              <tr>
-                <th><s-text color="subdued">Badge Preview</s-text></th>
-                <th><s-text color="subdued">Configuration</s-text></th>
-                <th><s-text color="subdued">Applied Products</s-text></th>
-                <th style={{ textAlign: "right" }}><s-text color="subdued">Actions</s-text></th>
-              </tr>
-            </thead>
-            <tbody>
-              {badges.map((badge) => (
-                <tr key={badge.id}>
-                  <td>
-                    <div
-                      className="bc-badge-preview-cell"
-                      style={{
-                        backgroundColor: badge.backgroundColor,
-                        color: badge.textColor,
-                      }}
-                    >
-                      {badge.text}
-                    </div>
-                  </td>
-                  <td>
-                    <s-text color="subdued">
-                      <strong>Text Color:</strong> {badge.textColor} <br />
-                      <strong>Bg Color:</strong> {badge.backgroundColor}
-                    </s-text>
-                  </td>
-                  <td>
+        <s-table>
+          {/* Header row */}
+          <s-table-header-row>
+            <s-table-header>
+              <s-text color="subdued">Badge Preview</s-text>
+            </s-table-header>
+
+            <s-table-header>
+              <s-text color="subdued">Applied Products</s-text>
+            </s-table-header>
+
+            <s-table-header>
+              <s-text color="subdued">Actions</s-text>
+            </s-table-header>
+          </s-table-header-row>
+
+          {/* Body */}
+          <s-table-body>
+            {badges.map((badge) => (
+              <s-table-row key={badge.id}>
+                {/* Badge preview cell */}
+                <s-table-cell>
+                  <div
+                    className="bc-badge-preview-cell"
+                    style={{
+                      backgroundColor: badge.backgroundColor,
+                      color: badge.textColor,
+                    }}
+                  >
+                    {badge.text}
+                  </div>
+                </s-table-cell>
+
+                {/* Applied products cell */}
+                <s-table-cell>
+                  <s-stack direction="inline" gap="base">
                     {badge.products.length === 0 ? (
-                      <s-text tone="critical">Not applied to any products</s-text>
+                      <s-text tone="critical">
+                        Not applied to any products
+                      </s-text>
                     ) : (
                       badge.products.map((bp) => (
-                        <s-box key={bp.id} background="subdued" padding="space-100" borderRadius="base" style={{ display: "inline-block", marginRight: "4px", fontSize: "11px" } as any}>
+                        <s-badge key={bp.id} tone="success">
                           {getProductTitle(bp.productId)}
-                        </s-box>
+                        </s-badge>
                       ))
                     )}
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    <s-button
-                      onClick={() => onEditClick(badge)}
-                      style={{ marginRight: "8px" } as any}
-                    >
-                      Edit
-                    </s-button>
+                  </s-stack>
+                </s-table-cell>
+
+                {/* Actions cell */}
+                <s-table-cell>
+                  <s-stack direction="block" gap="base">
+                    <s-button onClick={() => onEditClick(badge)}>Edit</s-button>
                     <s-button
                       tone="critical"
                       onClick={() => onDeleteClick(badge.id)}
                     >
                       Delete
                     </s-button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </s-box>
+                  </s-stack>
+                </s-table-cell>
+              </s-table-row>
+            ))}
+          </s-table-body>
+        </s-table>
       )}
     </s-box>
   );

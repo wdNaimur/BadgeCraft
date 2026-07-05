@@ -17,8 +17,8 @@ export function ProductSelector({
   setSelectedProductIds,
 }: ProductSelectorProps) {
   return (
-    <s-box paddingBlockEnd="space-400">
-      <s-box paddingBlockEnd="space-300">
+    <s-box paddingBlockEnd="large-100">
+      <s-box paddingBlockEnd="base">
         <s-search-field
           label="Apply to Products"
           placeholder="Search products..."
@@ -26,8 +26,8 @@ export function ProductSelector({
           onChange={(e: any) => setSearchQuery(e.currentTarget.value)}
         ></s-search-field>
       </s-box>
-      
-      <s-box style={{ maxHeight: "250px", overflowY: "auto" } as any} borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="base" padding="space-200" background="subdued">
+
+      <s-box style={{ maxHeight: "250px", overflowY: "auto" } as any} borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="base" padding="small" background="subdued">
         {filteredProducts.length === 0 ? (
           <s-box style={{ textAlign: "center", padding: "12px" } as any}>
             <s-text color="subdued">No products found.</s-text>
@@ -37,7 +37,6 @@ export function ProductSelector({
             <label key={product.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 12px", cursor: "pointer" }}>
               <input
                 type="checkbox"
-                name="productIds"
                 value={product.id}
                 checked={selectedProductIds.includes(product.id)}
                 onChange={(e) => {

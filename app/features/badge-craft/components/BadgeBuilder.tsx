@@ -7,6 +7,8 @@ interface BadgeBuilderProps {
   setTextColor: (color: string) => void;
   bgColor: string;
   setBgColor: (color: string) => void;
+  fontSize: string;
+  setFontSize: (size: string) => void;
   editingBadgeId: string | null;
   onCancelEdit?: () => void;
   children: React.ReactNode;
@@ -19,23 +21,25 @@ export function BadgeBuilder({
   setTextColor,
   bgColor,
   setBgColor,
+  fontSize,
+  setFontSize,
   editingBadgeId,
   onCancelEdit,
   children,
 }: BadgeBuilderProps) {
   return (
-    <s-box background="base" borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="large" padding="space-500">
-      <s-box paddingBlockEnd="space-400">
+    <s-box background="base" borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="large" padding="large-200">
+      <s-box paddingBlockEnd="large-100">
         <s-heading level="2">
           {editingBadgeId ? "Edit Badge Configuration" : "Create Dynamic Badge"}
         </s-heading>
       </s-box>
-      
+
       <Form method="post">
         <input type="hidden" name="actionType" value={editingBadgeId ? "edit" : "create"} />
         {editingBadgeId && <input type="hidden" name="badgeId" value={editingBadgeId} />}
-        
-        <s-box paddingBlockEnd="space-400">
+
+        <s-box paddingBlockEnd="large-100">
           <s-text-field
             name="text"
             label="Badge Label Text"
@@ -46,12 +50,38 @@ export function BadgeBuilder({
           ></s-text-field>
         </s-box>
 
-        <s-grid gridTemplateColumns="1fr 1fr" gap="space-400" style={{ marginBottom: "20px" } as any}>
+        <s-grid gridTemplateColumns="1fr 1fr 1fr" gap="base" style={{ marginBottom: "20px" } as any}>
           <s-box>
-            <s-box paddingBlockEnd="space-200">
+            <s-box paddingBlockEnd="small">
+              <s-text color="subdued">Badge Size</s-text>
+            </s-box>
+            <s-box background="subdued" borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="base" padding="small" style={{ display: 'flex', alignItems: 'center' } as any}>
+              <select
+                name="fontSize"
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value)}
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  fontSize: "14px",
+                  color: "var(--bc-text-dark)",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </s-box>
+          </s-box>
+
+          <s-box>
+            <s-box paddingBlockEnd="small">
               <s-text color="subdued">Text Color</s-text>
             </s-box>
-            <s-box background="subdued" borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="base" padding="space-200" style={{ display: 'flex', alignItems: 'center', gap: '8px' } as any}>
+            <s-box background="subdued" borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="base" padding="small" style={{ display: 'flex', alignItems: 'center', gap: '8px' } as any}>
               <input
                 type="color"
                 name="textColor"
@@ -64,10 +94,10 @@ export function BadgeBuilder({
           </s-box>
 
           <s-box>
-            <s-box paddingBlockEnd="space-200">
+            <s-box paddingBlockEnd="small">
               <s-text color="subdued">Background Color</s-text>
             </s-box>
-            <s-box background="subdued" borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="base" padding="space-200" style={{ display: 'flex', alignItems: 'center', gap: '8px' } as any}>
+            <s-box background="subdued" borderStyle="solid" borderWidth="small-100" borderColor="subdued" borderRadius="base" padding="small" style={{ display: 'flex', alignItems: 'center', gap: '8px' } as any}>
               <input
                 type="color"
                 name="backgroundColor"

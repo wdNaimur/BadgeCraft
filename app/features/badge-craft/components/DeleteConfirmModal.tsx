@@ -13,11 +13,11 @@ export function DeleteConfirmModal({
   return (
     <ui-modal id="delete-confirm-modal" open={isOpen} onHide={onClose}>
       <ui-title-bar title="Delete Configuration"></ui-title-bar>
-      <s-box padding="space-500">
+      <s-box padding="large">
         <s-paragraph>
           Are you sure you want to delete this badge configuration? This will permanently remove the badge from all assigned storefront products.
         </s-paragraph>
-        <s-box paddingBlockStart="space-400" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' } as any}>
+        <s-box paddingBlockStart="large-100" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' } as any}>
           <s-button onClick={onClose}>
             Cancel
           </s-button>

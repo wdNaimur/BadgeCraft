@@ -39,6 +39,7 @@ model Badge {
   text            String         // Display text (e.g. "20% OFF")
   textColor       String         @default("#FFFFFF") // Hex value for font color
   backgroundColor String         @default("#000000") // Hex value for background
+  fontSize        String         @default("medium")  // Size option: "small", "medium", "large"
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   products        BadgeProduct[] // One-to-many relationship with mapped products

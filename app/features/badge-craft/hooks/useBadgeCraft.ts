@@ -10,6 +10,7 @@ export function useBadgeCraft(products: ShopifyProduct[]) {
   const [badgeText, setBadgeText] = useState("NEW ITEM");
   const [textColor, setTextColor] = useState("#FFFFFF");
   const [bgColor, setBgColor] = useState("#008060");
+  const [fontSize, setFontSize] = useState("medium");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Edit configuration state
@@ -26,6 +27,7 @@ export function useBadgeCraft(products: ShopifyProduct[]) {
     setBadgeText("NEW ITEM");
     setTextColor("#FFFFFF");
     setBgColor("#008060");
+    setFontSize("medium");
     setSelectedProductIds([]);
   };
 
@@ -42,6 +44,7 @@ export function useBadgeCraft(products: ShopifyProduct[]) {
     setBadgeText(badge.text);
     setTextColor(badge.textColor);
     setBgColor(badge.backgroundColor);
+    setFontSize(badge.fontSize || "medium");
     setSelectedProductIds(badge.products.map((p) => p.productId));
   };
 
@@ -57,6 +60,8 @@ export function useBadgeCraft(products: ShopifyProduct[]) {
     setTextColor,
     bgColor,
     setBgColor,
+    fontSize,
+    setFontSize,
     searchQuery,
     setSearchQuery,
     editingBadgeId,

@@ -22,6 +22,8 @@ export default function App() {
         {/* @ts-ignore */}
         <s-link href="/app" suppressHydrationWarning>Home</s-link>
         {/* @ts-ignore */}
+        <s-link href="/app/create-badge" suppressHydrationWarning>Create Badge</s-link>
+        {/* @ts-ignore */}
         <s-link href="/app/additional" suppressHydrationWarning>Additional page</s-link>
       </s-app-nav>
       <Outlet />
